@@ -118,7 +118,6 @@ public class Player
             return;
         }
 
-        int tileSize = (int)Model.tileSize;
         SetRowCol();
         
 
@@ -181,7 +180,7 @@ public class Player
                 }
 
                 //TerrainUtils.DrawDebugCircle(targetPosition);
-
+                
 
                 Vector3 pos = targetPosition - t.position;
 
@@ -204,8 +203,8 @@ public class Player
             if (currState == State.ROTATING)
             {
                 // Calculate a rotation a step closer to the target and applies rotation to this object
-                
 
+                
                 bool complete = RotateOnYAxis( targetPosition, false, currRotationSpeed);
 
                 //the angle needs to equal to minus target angle. i dont understand why
@@ -242,7 +241,7 @@ public class Player
 
                     // Move towards the target
                     t.position = Vector3.MoveTowards(t.position, targetPosition, moveSpeed * Time.deltaTime);
-                    
+
                 }
             }
             if(currState == State.MOVE_END)
@@ -258,7 +257,15 @@ public class Player
                 currState = State.PROCESS_ORDERS;
             }
 
-            AdjustPlayerHeightAndRotationAccordingToTerrain(true);
+            if (currState != State.ROTATING)
+            {
+                AdjustPlayerHeightAndRotationAccordingToTerrain(true);
+            }
+            else
+            {
+                AdjustPlayerHeightAndRotationAccordingToTerrain(false);
+            }
+                
         }
         
     }
