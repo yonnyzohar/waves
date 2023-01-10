@@ -95,26 +95,14 @@ public class CamCtrl : MonoBehaviour
         }
 
         //if (immediate)
-        
-            transform.position = _target.transform.position;
-            Vector3 back =  (Vector3.forward * distance);
-            
-            transform.position -= back;
-            transform.position += Vector3.up * height;
-          
-        /*
-        else
-        {
-            Vector3 dest = _target.transform.position - (Vector3.forward * distance) + (Vector3.up * height);
-            transform.position = dest;
 
-        }
-        */
+        Vector3 targetPosition = _target.transform.position;
+        Vector3 back =  (Vector3.forward * distance);
+        targetPosition -= back;
+        targetPosition += Vector3.up * height;
+        transform.position = Vector3.MoveTowards(transform.position, targetPosition, 10f * Time.deltaTime);
 
-        // Offset the camera's position by the distance and height
-        //transform.position -= Vector3.forward * distance;
-        //transform.position += Vector3.up * height;
         // Rotate the camera to look at the target
-        cam.transform.LookAt(_target.transform);
+        //cam.transform.LookAt(_target.transform);
     }
 }
