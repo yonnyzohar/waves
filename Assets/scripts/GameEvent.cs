@@ -1,7 +1,10 @@
-﻿using System;
-public class GameEvent
+﻿namespace RTS
 {
-    public GameEvent()
+    public class GameEvent
     {
+        public GameEvent()
+        {
+        }
     }
+
 }
