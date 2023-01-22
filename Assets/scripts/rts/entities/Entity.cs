@@ -54,7 +54,7 @@
 
         }
 
-        public GameObject GetPlayer()
+        public GameObject GetGameObject()
         {
             return charPh;
         }

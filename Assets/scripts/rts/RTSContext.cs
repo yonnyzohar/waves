@@ -12,6 +12,7 @@
         Terrain terrain;
         RTSConfigs commandConfigs;
         Astar aStar;
+        private EnemiesManager enemiesManager;
 
         GameObject light;
         //GameObject camCtrl;
@@ -20,13 +21,13 @@
         private void EntityPoolCreateFnc(object ent)
         {
             Entity e = ent as Entity;
-            e.GetPlayer().SetActive(false);
+            e.GetGameObject().SetActive(false);
         }
 
         private void EntityPoolRetreiveFnc(object ent)
         {
             Entity e = ent as Entity;
-            e.GetPlayer().SetActive(true);
+            e.GetGameObject().SetActive(true);
         }
 
 
@@ -47,7 +48,7 @@
 
             int numOfPoolInsances = myModel.numCols * myModel.numRows;
             allPools.Add("Tank", new Engine.Pool(this, typeof(Tank), TankCls, numOfPoolInsances, EntityPoolCreateFnc, EntityPoolRetreiveFnc));
-            terrain = new Terrain(this, allPools["Tank"]);
+            terrain = new Terrain(this);
 
             int numRows = myModel.numRows;
             int numCols = myModel.numCols;
@@ -62,11 +63,14 @@
             player.Init(halfH, halfW);
 
             camScript = new CamCtrl(this);
-            camScript.setTarget(player.GetPlayer());
-            terrain.setPlayer(player.GetPlayer());
+            enemiesManager = new EnemiesManager(this, allPools["Tank"]);
+            camScript.setTarget(player.GetGameObject());
+            enemiesManager.setPlayer(player.GetGameObject());
 
             camScript.addListener("CLICK_ON_TERRAIN", onClick);
 
+
+            
 
             //SequenceCommand myCmd = factory.getCommand("mSequence") as SequenceCommand;
             //myCmd.addListener(Command.COMPLETE_MSG, onMyCmdComplete);
@@ -92,7 +96,7 @@
              );
 
             //this is will make the camera jump to the new offset insted of tweaning to it
-            camScript.FocusOnTarget(player.GetPlayer(), true);
+            camScript.FocusOnTarget(player.GetGameObject(), true);
             terrain.setNewRowsCols(deltaRows, deltaCols);
         }
 
@@ -138,7 +142,7 @@
             if (path != null && path.Count > 0)
             {
                 //clickIndicator.ShowIndication(map[row][col]);
-                camScript.setTarget(player.GetPlayer());
+                camScript.setTarget(player.GetGameObject());
                 player.SetPath(path, clickedPoint);
                 terrain.HighlightClickedNode(map[grid_row][grid_col]);
 
@@ -165,9 +169,10 @@
             terrain.Update();
             Engine.Timer.Update();
 
-            Vector3 playerPos = player.GetPlayer().transform.position;
+            Vector3 playerPos = player.GetGameObject().transform.position;
             playerPos.y = 1;
             camScript.Update();
+            enemiesManager.Update();
 
             light.transform.position = playerPos;
         }

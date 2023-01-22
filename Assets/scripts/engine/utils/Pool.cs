@@ -19,6 +19,7 @@
 
         PoolCreateFnctn cfunc;
         PoolRetrieveFnctn rfunc;
+        private int active = 0;
 
         public Pool(Context _context, Type CLS, GameObject prefab, int num, PoolCreateFnctn _cfunc = null, PoolRetrieveFnctn _rfunc = null)
         {
@@ -48,6 +49,7 @@
 
         public PoolItem get()
         {
+            active++;
             PoolItem item = next;
             rfunc(item.o);
             next = item.next;
@@ -56,10 +58,16 @@
 
         public void putBack(PoolItem item)
         {
+            active--;
             item.next = next;
             cfunc(item.o);
             next = item;
             
+        }
+
+        public int getNumActive()
+        {
+            return active;
         }
     }
 
