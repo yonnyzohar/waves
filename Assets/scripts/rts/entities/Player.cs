@@ -8,7 +8,7 @@ namespace RTS
     public class Player : Entity
     {
         
-        private float moveSpeed = 2.0f;
+        private float moveSpeed = 1.0f;
         
         private int currPosInPath;
         bool useKeyboard = false;
@@ -20,9 +20,11 @@ namespace RTS
         private int prevCol;
 
 
-        public delegate void Del(int deltaRows, int deltaCols);
+        public delegate void TimeMovedFnctn(int deltaRows, int deltaCols);
 
-        Del handler;
+
+        TimeMovedFnctn OnTileMoved;
+        TimeMovedFnctn tileStartMove;
 
         enum State { ROTATING, MOVING, IDLE, PROCESS_ORDERS, MOVE_END };
 
@@ -30,10 +32,11 @@ namespace RTS
         
 
         // Use this for initialization
-        public Player(RTSContext _context, int _startRow, int startCol, Del _handler, GameObject prefab): base(_context, _startRow, startCol, prefab)
+        public Player(RTSContext _context, int _startRow, int startCol, TimeMovedFnctn _OnTileMoved, TimeMovedFnctn _tileStartMove, GameObject prefab): base(_context, _startRow, startCol, prefab)
         {
             currState = State.IDLE;
-            handler = _handler;
+            OnTileMoved = _OnTileMoved;
+            tileStartMove = _tileStartMove;
             rotSpeed = 100.0f;
             AdjustPlayerHeightAndRotationAccordingToTerrain(true);
         }
@@ -144,6 +147,8 @@ namespace RTS
                     //the angle needs to equal to minus target angle. i dont understand why
                     if (complete)
                     {
+                        RowCol next = path[currPosInPath];
+                        tileStartMove(next.row - grid_row, next.col - grid_col);
                         RotateOnYAxis(targetPosition, true);
                         currState = State.MOVING;
                     }
@@ -179,7 +184,7 @@ namespace RTS
                     int deltaCols = (grid_col - prevCol);
 
                     //this is the advance map funciton in terrain
-                    handler(deltaRows, deltaCols);
+                    OnTileMoved(deltaRows, deltaCols);
 
                     if (currPosInPath >= path.Count)
                     {

@@ -17,14 +17,14 @@
 
         public Color BROWN_COLOR { get; private set; }
 
-        private float LAND_THRESHOLD = 0.4f;
+        private float LAND_THRESHOLD = 0.35f;
 
-
+        private bool mapChanged = false;
 
         public Terrain(RTSContext _context):base(_context)
         {
             RTSModel model = getModel() as RTSModel;
-            
+            mapChanged = true;
             BROWN_COLOR = RandomBrownColor();
             int startRow = 0;
             int startCol = 0;
@@ -59,10 +59,8 @@
             }
         }
 
-        
-
         //-1 deltaRows means down, 1 is up
-        public void setNewRowsCols(int deltaRows, int deltaCols)
+        public void setRowsColsStartOfMove(int deltaRows, int deltaCols)
         {
             RTSModel model = getModel() as RTSModel;
             List<List<Node>> map = model.map;
@@ -73,30 +71,99 @@
             {
                 for (int col = 0; col < numCols; col++)
                 {
-                    map[0][col].alpha = 0f;
+                    map[numRows - 1][col].alpha = 1f;
+                    map[numRows - 1][col].status = Node.FadeStatus.FADE_OUT;
+                    
                 }
             }
             if (deltaRows == 1)
             {
                 for (int col = 0; col < numCols; col++)
                 {
-                    map[numRows - 1][col].alpha = 0f;
+                    map[0][col].alpha = 1f;
+                    map[0][col].status = Node.FadeStatus.FADE_OUT;
                 }
             }
             if (deltaCols == -1)
             {
                 for (int row = 0; row < numRows; row++)
                 {
-                    map[row][0].alpha = 0f;
+                    map[row][numCols - 1].alpha = 1f;
+                    map[row][numCols - 1].status = Node.FadeStatus.FADE_OUT;
                 }
             }
             if (deltaCols == 1)
             {
                 for (int row = 0; row < numRows; row++)
                 {
-                    map[row][numCols - 1].alpha = 0f;
+                    map[row][0].alpha = 1f;
+                    map[row][0].status = Node.FadeStatus.FADE_OUT;
                 }
             }
+        }
+
+
+
+        //-1 deltaRows means down, 1 is up
+        public void setNewRowsColsEndOfMove(int deltaRows, int deltaCols)
+        {
+            RTSModel model = getModel() as RTSModel;
+            List<List<Node>> map = model.map;
+            int numRows = model.numRows;
+            int numCols = model.numCols;
+
+            if (deltaRows == -1)
+            {
+                for (int col = 0; col < numCols; col++)
+                {
+                    //set old ones to normal
+                    map[numRows - 1][col].alpha = 1f;
+                    map[numRows - 1][col].status = Node.FadeStatus.NONE;
+
+                    //show new tiles
+                    map[0][col].alpha = 0f;
+                    map[0][col].status = Node.FadeStatus.FADE_IN;
+                }
+            }
+            if (deltaRows == 1)
+            {
+                for (int col = 0; col < numCols; col++)
+                {
+                    map[0][col].alpha = 1f;
+                    map[0][col].status = Node.FadeStatus.NONE;
+
+
+                    map[numRows - 1][col].alpha = 0f;
+                    map[numRows - 1][col].status = Node.FadeStatus.FADE_IN;
+                }
+            }
+            if (deltaCols == -1)
+            {
+                for (int row = 0; row < numRows; row++)
+                {
+                    map[row][numCols - 1].alpha = 1f;
+                    map[row][numCols - 1].status = Node.FadeStatus.NONE;
+
+
+                    map[row][0].alpha = 0f;
+                    map[row][0].status = Node.FadeStatus.FADE_IN;
+                }
+            }
+            if (deltaCols == 1)
+            {
+                for (int row = 0; row < numRows; row++)
+                {
+                    map[row][0].alpha = 1f;
+                    map[row][0].status = Node.FadeStatus.NONE;
+
+                    map[row][numCols - 1].alpha = 0f;
+                    map[row][numCols - 1].status = Node.FadeStatus.FADE_IN;
+                }
+            }
+
+            mapChanged = true;
+            //force call this!
+            Update();
         }
 
         public void Update()
@@ -119,6 +186,26 @@
                 }
             }
 
+            if(mapChanged)
+            {
+                List<List<Node>> map = model.map;
+                
+                string str = "";
+                for (int row = numRows-1; row >= 0; row--)
+                {
+                    for (int col = 0; col < numCols; col++)
+                    {
+                        Node s = model.map[row][col];
+
+                        str += s.world_row + "," + s.world_col + " | ";
+                    }
+                    str += "\n";
+                }
+                Debug.Log(str);
+
+                mapChanged = false;
+            }
+
 
             //this is what creates the waves!!
             perlinSeed += (Time.deltaTime / model.seedVariation);
@@ -127,12 +214,37 @@
         private void ProcessAlpha(int row, int col)
         {
             RTSModel model = getModel() as RTSModel;
-            List<List<Node>> map = model.map;
             Node s = model.map[row][col];
-            if (s.alpha < 1f)
+
+            if(s.status == Node.FadeStatus.FADE_IN)
             {
-                s.alpha += 0.01f;
+                if (s.alpha < 1f)
+                {
+                    s.alpha += 0.01f;
+                }
+                else
+                {
+                    s.status = Node.FadeStatus.NONE;
+                }
             }
+            if(s.status == Node.FadeStatus.FADE_OUT)
+            {
+                if (s.alpha > 0f)
+                {
+                    s.alpha -= 0.008f;
+                }
+                else
+                {
+                    s.alpha = 0f;
+                    //s.status = Node.FadeStatus.NONE;
+                }
+            }
+            if(s.status == Node.FadeStatus.NONE)
+            {
+                s.alpha = 1f;
+            }
+
+            
 
         }
 
@@ -254,7 +366,7 @@
             GameObject go = s.go;
             MeshRenderer renderer = go.GetComponent<MeshRenderer>();
 
-            if (s.noiseBase < LAND_THRESHOLD)
+            if (s.noiseBase < LAND_THRESHOLD)//
             {
                 s.terrainType = TileType.LAND;
 
@@ -413,16 +525,16 @@
             Mesh mesh = meshFilter.mesh;
             Vector3[] vertices = mesh.vertices;
             Transform t = go.transform;
-            if (s.terrainType == TileType.LAND)
-            {
-                Vector3 pos = new Vector3(t.position.x, 0.20f, t.position.z);
-                go.transform.position = pos;
-            }
-            else
-            {
-                Vector3 pos = new Vector3(t.position.x, 0.0f, t.position.z);
-                go.transform.position = pos;
-            }
+            //if (s.terrainType == TileType.LAND)
+            //{
+            //    Vector3 pos = new Vector3(t.position.x, 0.20f, t.position.z);
+            //    go.transform.position = pos;
+            //}
+            //else
+            //{
+            //    Vector3 pos = new Vector3(t.position.x, 0.0f, t.position.z);
+            //    go.transform.position = pos;
+            //}
 
             for (int i = 0; i < vertices.Length; i++)
             {
@@ -431,14 +543,14 @@
                 float f1 = c + vertices[i].x;
                 float f2 = r + vertices[i].z;
                 float noise = 0;
-                if (s.terrainType == TileType.LAND)
-                {
-                    noise = Mathf.PerlinNoise(s.noiseBase + f1, f2 + s.noiseBase);
-                }
-                else
-                {
+                //if (s.terrainType == TileType.LAND)
+                //{
+                //    noise = Mathf.PerlinNoise(s.noiseBase + f1, f2 + s.noiseBase);
+                //}
+                //else
+                //{
                     noise = Mathf.PerlinNoise(f1 + perlinSeed, f2 + perlinSeed);
-                }
+                //}
 
                  
                 vertices[i].y = noise;

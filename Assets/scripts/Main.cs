@@ -15,12 +15,7 @@ namespace RTS
         {
             context = new RTSContext();
 
-            
-            
-
         }
-
-        
 
 
         // Update is called once per frame

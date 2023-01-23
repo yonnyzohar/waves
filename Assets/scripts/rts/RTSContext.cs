@@ -43,11 +43,11 @@
             commandConfigs.init();
             factory = new Engine.Factory(commandConfigs, this);
 
-            GameObject TankCls = (GameObject)Resources.Load("Prefabs/Tank");
-            TankCls.SetActive(false);
+            GameObject EnemyCls = (GameObject)Resources.Load("Prefabs/elephant");
+            EnemyCls.SetActive(false);
 
             int numOfPoolInsances = myModel.numCols * myModel.numRows;
-            allPools.Add("Tank", new Engine.Pool(this, typeof(Tank), TankCls, numOfPoolInsances, EntityPoolCreateFnc, EntityPoolRetreiveFnc));
+            allPools.Add("Enemy", new Engine.Pool(this, typeof(Enemy), EnemyCls, numOfPoolInsances, EntityPoolCreateFnc, EntityPoolRetreiveFnc));
             terrain = new Terrain(this);
 
             int numRows = myModel.numRows;
@@ -59,18 +59,18 @@
             int halfH = (numRows) / 2;
 
             light = GameObject.Find("Light");
-            player = new Player(this, halfH, halfW, OnTileMoved, (GameObject)Resources.Load("Prefabs/Ship"));
+            player = new Player(this, halfH, halfW, OnTileMoved, onTileStartMove, (GameObject)Resources.Load("Prefabs/Ship"));
             player.Init(halfH, halfW);
 
             camScript = new CamCtrl(this);
-            enemiesManager = new EnemiesManager(this, allPools["Tank"]);
+            enemiesManager = new EnemiesManager(this, allPools["Enemy"]);
             camScript.setTarget(player.GetGameObject());
             enemiesManager.setPlayer(player.GetGameObject());
 
             camScript.addListener("CLICK_ON_TERRAIN", onClick);
+            enemiesManager.place();
 
 
-            
 
             //SequenceCommand myCmd = factory.getCommand("mSequence") as SequenceCommand;
             //myCmd.addListener(Command.COMPLETE_MSG, onMyCmdComplete);
@@ -80,6 +80,12 @@
         private void onMyCmdComplete(Actor dispatcher)
         {
             dispatcher.removeListener(Command.COMPLETE_MSG, onMyCmdComplete);
+        }
+
+        public void onTileStartMove(int deltaRows, int deltaCols)
+        {
+            Debug.Log("WOW");
+            terrain.setRowsColsStartOfMove(deltaRows, deltaCols);
         }
 
         public void OnTileMoved(int deltaRows, int deltaCols)
@@ -97,7 +103,8 @@
 
             //this is will make the camera jump to the new offset insted of tweaning to it
             camScript.FocusOnTarget(player.GetGameObject(), true);
-            terrain.setNewRowsCols(deltaRows, deltaCols);
+            terrain.setNewRowsColsEndOfMove(deltaRows, deltaCols);
+            enemiesManager.place();
         }
 
         private void onClick(Actor dispatcher)

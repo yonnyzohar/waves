@@ -5,16 +5,34 @@
 
     public class EnemiesManager : Engine.Actor
     {
+        public enum EnemyState { ALIVE = 0, DEAD = 1 };
+
         private Engine.Pool pool;
         GameObject player;
+        private Dictionary<string, EnemyStruct> enemiesMap;
+
+        public class EnemyStruct
+        {
+            public Enemy enemy;
+            public EnemyState state;
+            public Quaternion lastRotation;
+
+            public EnemyStruct(Enemy _enemy, EnemyState _state)
+            {
+                enemy = _enemy;
+                state = _state;
+            }
+
+        }
 
 
         public EnemiesManager(RTSContext context, Engine.Pool _tanksPool) :base(context)
         {
+            enemiesMap = new Dictionary<string, EnemyStruct>();
             pool = _tanksPool;
         }
 
-        public void Update()
+        public void place()
         {
             RTSModel model = getModel() as RTSModel;
             int numRows = model.numRows;
@@ -28,96 +46,98 @@
             }
         }
 
+        public void Update()
+        {
+            foreach (var item in enemiesMap)
+            {
+                EnemyStruct enemyStruct = item.Value;
+                if(enemyStruct.enemy != null)
+                {
+                    enemyStruct.enemy.Update();
+                }
+            }
+        }
+
         private void iterateLandNode(int row, int col)
         {
             RTSModel model = getModel() as RTSModel;
             List<List<Node>> map = model.map;
             Node s = map[row][col];
+            string key = (s.world_row - model.rowOffset ) + "_" + (s.world_col - model.colOffset);
+
+            
+;
             if (s.terrainType == TileType.LAND)
             {
-
-                bool dotree1 = s.noiseBase > 0.3f;
-                bool dotree2 = false;// Mathf.PerlinNoise(s.t2Center.x, s.t2Center.z) > 0.5f;
-                if (dotree1)
+                Debug.Log(key + " is land! row " + row + " col " + col);
+                Enemy enemy = null; 
+                if (!enemiesMap.ContainsKey(key))
                 {
-                    if (s.tree1 == null)
+                    Debug.Log("adding tank to " + key + " for the first time");
+                    enemiesMap.Add(key, new EnemyStruct((Enemy)pool.get(), EnemyState.ALIVE));
+
+                    EnemyStruct enemyStruct = enemiesMap[key];
+                    enemy = enemyStruct.enemy;
+                    enemy.Init(row, col);
+                    GameObject ent = enemy.GetGameObject();
+
+                    ent.name = "tree1";
+                    //ent.transform.parent = s.go.transform;
+                    ent.transform.position = s.t1Center;
+
+
+                    //PlaceTrees(row, col);
+
+                }
+                else
+                {
+                    //Debug.Log(key + " is a land node");
+                    //entry already exists, tank does not
+                    EnemyStruct enemyStruct = enemiesMap[key];
+                    Debug.Log(key + " already exists");
+                    enemy = enemyStruct.enemy;
+
+                    if(enemy == null)
                     {
-                        s.tree1 = pool.get();
-                        Tank t = (Tank)s.tree1.o;
-                        t.Init(row, col);
-                        GameObject tree1 = t.GetGameObject();
+                        Debug.Log(key + " recreating tank");
+                        enemy = (Enemy)pool.get();
+                        enemyStruct.enemy = enemy;
+                        enemy.Init(row, col);
+                        GameObject ent = enemy.GetGameObject();
 
-                        tree1.name = "tree1";
 
-                        tree1.transform.parent = s.go.transform;
-                        tree1.transform.position = s.t1Center;
-                        PlaceTrees(row, col);
-                        /*
-
-                        Transform treeTopT = tree1.transform.Find("treeTop");
-                        GameObject treeTop = treeTopT.gameObject;
-
-                        MeshRenderer renderer = treeTop.GetComponent<MeshRenderer>();
-
-                                Color color = renderer.material.color;
-                                color.g = UnityEngine.Random.Range(0.4f, 0.8f);
-                                //renderer.material.shader = Shader.Find("Unlit/Color");
-                                renderer.material.SetColor("_Color", color);
-                       */
-                    }
-                    else
-                    {
-                        Tank t = (Tank)s.tree1.o;
-                        t.Update();
-                    }
-                    if (player)
-                    {
-                        Tank t = (Tank)s.tree1.o;
-                        t.SetTarget(player);
+                        ent.name = "tree1";
+                        //ent.transform.parent = s.go.transform;
+                        ent.transform.position = s.t1Center;
+                        ent.transform.rotation = enemyStruct.lastRotation;
+                        //setGroundRotation(row, col);
                     }
                 }
 
-                if (dotree2)
+                
+                if (player)
                 {
-                    if (s.tree2 == null)
-                    {
-                        s.tree2 = pool.get();
-                        Tank t = (Tank)s.tree2.o;
-                        t.Init(row, col);
-                        if (player)
-                        {
-                            t.SetTarget(player);
-                        }
-
-                        GameObject tree2 = t.GetGameObject();
-
-                        tree2.name = "tree2";
-                        tree2.transform.parent = s.go.transform;
-                        tree2.transform.position = s.t2Center;
-                        PlaceTrees(row, col);
-                    }
-                    else
-                    {
-                        Tank t = (Tank)s.tree2.o;
-                        t.Update();
-                    }
+                    enemy.SetTarget(player);
                 }
 
             }
             else
             {
-                if (s.tree1 != null)
+                Debug.Log(key + " is water");
+                if (enemiesMap.ContainsKey(key))
                 {
-                    pool.putBack(s.tree1);
-                    s.tree1 = null;
-                }
-                if (s.tree2 != null)
-                {
-                    pool.putBack(s.tree2);
-                    s.tree2 = null;
+                    EnemyStruct enemyStruct = enemiesMap[key];
+                    if (enemyStruct != null && enemyStruct.enemy != null)
+                    {
+                        Debug.Log(key + " removing tank!");
+
+                        GameObject ent = enemyStruct.enemy.GetGameObject();
+                        enemyStruct.lastRotation = ent.transform.rotation;
+                        pool.putBack(enemyStruct.enemy);
+                        enemyStruct.enemy = null;
+                    }
                 }
             }
-
         }
 
 
@@ -155,4 +175,16 @@
         }
     }
 }
-    
+
+/*
+
+Transform treeTopT = tree1.transform.Find("treeTop");
+GameObject treeTop = treeTopT.gameObject;
+
+MeshRenderer renderer = treeTop.GetComponent<MeshRenderer>();
+
+        Color color = renderer.material.color;
+        color.g = UnityEngine.Random.Range(0.4f, 0.8f);
+        //renderer.material.shader = Shader.Find("Unlit/Color");
+        renderer.material.SetColor("_Color", color);
+*/

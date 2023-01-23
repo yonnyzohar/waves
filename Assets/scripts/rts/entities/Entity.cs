@@ -27,7 +27,7 @@
         public void SetTarget(GameObject _target)
         {
             target = _target;
-            targetPosition = target.transform.position;
+            
         }
 
         public void Init(int _startRow, int startCol)
@@ -39,6 +39,11 @@
 
             charPh.transform.position = s.t1Center;
             SetRowCol();
+            if(target)
+            {
+                targetPosition = target.transform.position;
+            }
+            
             SetRotationByTerrain(s.t1Normal, targetPosition);
         }
 
@@ -76,6 +81,11 @@
 
         public virtual void Update()
         {
+            if(target)
+            {
+                targetPosition = target.transform.position;
+            }
+            
             SetRowCol();
         }
 

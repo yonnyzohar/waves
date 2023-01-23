@@ -1,17 +1,12 @@
 ﻿namespace Engine
 {
     using System;
+    using System.Collections.Generic;
     using UnityEngine;
-    public class PoolItem
-    {
-        public object o = null;//this is the calss itsef, e.g Tank, Player
-        public PoolItem next = null;
-    }
 
     
     public class Pool
     {
-        private PoolItem next;
         private Context context;
 
         public delegate void PoolCreateFnctn(object o);
@@ -21,48 +16,36 @@
         PoolRetrieveFnctn rfunc;
         private int active = 0;
 
+        private object[] arr;
+
         public Pool(Context _context, Type CLS, GameObject prefab, int num, PoolCreateFnctn _cfunc = null, PoolRetrieveFnctn _rfunc = null)
         {
+            arr = new object[num];
             cfunc = _cfunc;
             rfunc = _rfunc;
             context = _context;
-            PoolItem item = null;
+            active = 0;
             for (int i = 0; i < num; i++)
             {
-                if (i == 0)
-                {
-                    item = new PoolItem();
-                    next = item;
-                }
-                else
-                {
-                    item.next = new PoolItem();
-                    item = item.next;
-                }
-
-                item.o = Activator.CreateInstance(CLS, context, 0, 0, MonoBehaviour.Instantiate(prefab));
-                cfunc(item.o);
-                
-
+                object o = Activator.CreateInstance(CLS, context, 0, 0, MonoBehaviour.Instantiate(prefab));
+                cfunc(o);
+                arr[i] = o;
             }
         }
 
-        public PoolItem get()
+        public object get()
         {
+            object o = arr[active];
+            rfunc(o);
             active++;
-            PoolItem item = next;
-            rfunc(item.o);
-            next = item.next;
-            return item;
+            return o;
         }
 
-        public void putBack(PoolItem item)
+        public void putBack(object o)
         {
             active--;
-            item.next = next;
-            cfunc(item.o);
-            next = item;
-            
+            arr[active] = o;
+            cfunc(o);
         }
 
         public int getNumActive()
