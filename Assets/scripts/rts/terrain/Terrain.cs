@@ -231,17 +231,19 @@
             {
                 if (s.alpha > 0f)
                 {
-                    s.alpha -= 0.008f;
+                    s.alpha -= 0.009f;
                 }
                 else
                 {
                     s.alpha = 0f;
+                    s.go.SetActive(false);
                     //s.status = Node.FadeStatus.NONE;
                 }
             }
             if(s.status == Node.FadeStatus.NONE)
             {
                 s.alpha = 1f;
+                s.go.SetActive(true);
             }
 
             
@@ -366,7 +368,7 @@
             GameObject go = s.go;
             MeshRenderer renderer = go.GetComponent<MeshRenderer>();
 
-            if (s.noiseBase < LAND_THRESHOLD)//
+            if (s.noiseBase < LAND_THRESHOLD)
             {
                 s.terrainType = TileType.LAND;
 
@@ -588,11 +590,11 @@
             //this is me - i am bottom RIGHT
             AlterVertex(row, col);
             //this is left
-            AlterVertex(row, col - 1);
+            //AlterVertex(row, col - 1);
             //this is top
-            AlterVertex(row + 1, col);
+            //AlterVertex(row + 1, col);
             //this is top left
-            AlterVertex(row + 1, col - 1);
+            //AlterVertex(row + 1, col - 1);
 
             s.altered = true;
 

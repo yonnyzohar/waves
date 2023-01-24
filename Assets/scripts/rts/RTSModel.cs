@@ -6,8 +6,8 @@ namespace RTS
     public class RTSModel : Engine.Model
     {
         public float tileSize = 1f;
-        public int numRows = 5;
-        public int numCols = 5;
+        public int numRows = 6;
+        public int numCols = 6;
         public float seedVariation = 2f;
         //public static float peakHeight = 2.1f;
         public List<List<Node>> map = new List<List<Node>>();

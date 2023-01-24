@@ -79,6 +79,7 @@ namespace RTS
                         // Get the point where the ray intersected the collider
                         clickedPoint = hit.point;
                         clickedGameObject = hit.collider.gameObject;
+                        target = null;
                         dispatchEvent("CLICK_ON_TERRAIN");
 
                         // Do something with the point...
