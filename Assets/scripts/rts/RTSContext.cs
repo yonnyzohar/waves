@@ -30,10 +30,16 @@
             e.GetGameObject().SetActive(true);
         }
 
+        StartGameMenu menu;
 
         public RTSContext()
         {
             UnityEngine.Random.InitState(1);
+
+            menu = new StartGameMenu(this);
+            menu.addListener("MENU_REMOVED", onMenuRemoved);
+
+
             aStar = new Astar();
             model = new RTSModel();
 
@@ -67,14 +73,18 @@
             camScript.setTarget(player.GetGameObject());
             enemiesManager.setPlayer(player.GetGameObject());
 
-            camScript.addListener("CLICK_ON_TERRAIN", onClick);
-            enemiesManager.place();
-
-
 
             //SequenceCommand myCmd = factory.getCommand("mSequence") as SequenceCommand;
             //myCmd.addListener(Command.COMPLETE_MSG, onMyCmdComplete);
             //myCmd.execute();
+        }
+
+        private void onMenuRemoved(Actor dispatcher)
+        {
+            menu.removeListener("MENU_REMOVED", onMenuRemoved);
+            menu = null;
+            camScript.addListener("CLICK_ON_TERRAIN", onClick);
+            enemiesManager.place();
         }
 
         private void onMyCmdComplete(Actor dispatcher)
